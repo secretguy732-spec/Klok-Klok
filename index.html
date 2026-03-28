@@ -1,0 +1,1366 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KlokKlok — AI Anime Universe</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Noto+Sans+JP:wght@300;400;700&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+:root {
+  --bg: #02020a; --card: #0a0a1a; --glass: rgba(255,255,255,0.04);
+  --cyan: #00f5ff; --pink: #ff2d78; --gold: #ffd700; --violet: #8b5cf6;
+  --text: #e8eaf6; --dim: #7c84a8;
+  --glow-c: 0 0 30px rgba(0,245,255,0.3);
+  --glow-p: 0 0 30px rgba(255,45,120,0.3);
+  --font-d: 'Orbitron', monospace;
+  --font-j: 'Noto Sans JP', sans-serif;
+  --font-b: 'Rajdhani', sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--font-b);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 60% at 20% 10%,rgba(0,245,255,0.06) 0%,transparent 60%),radial-gradient(ellipse 60% 80% at 80% 90%,rgba(255,45,120,0.06) 0%,transparent 60%);pointer-events:none;z-index:0}
+canvas#particles{position:fixed;inset:0;pointer-events:none;z-index:0}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;z-index:1000;backdrop-filter:blur(20px);background:rgba(2,2,10,0.9);border-bottom:1px solid rgba(0,245,255,0.15);padding:0 2rem;height:64px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:var(--font-d);font-size:1.6rem;font-weight:900;background:linear-gradient(135deg,var(--cyan),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;cursor:pointer;letter-spacing:2px}
+.nav-links{display:flex;gap:2rem;list-style:none}
+.nav-links a{color:var(--dim);text-decoration:none;font-weight:600;font-size:.9rem;letter-spacing:1px;transition:color .3s;cursor:pointer}
+.nav-links a:hover{color:var(--cyan)}
+.nav-right{display:flex;align-items:center;gap:1rem}
+.search{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:30px;padding:.5rem 1.2rem;color:var(--text);font-family:var(--font-b);font-size:.9rem;outline:none;width:200px;transition:all .3s}
+.search:focus{border-color:var(--cyan);box-shadow:0 0 20px rgba(0,245,255,.15);width:260px}
+.search::placeholder{color:var(--dim)}
+.btn-login{background:linear-gradient(135deg,var(--cyan),var(--violet));border:none;color:#000;font-family:var(--font-d);font-size:.7rem;font-weight:700;letter-spacing:1px;padding:.5rem 1.2rem;border-radius:4px;cursor:pointer;transition:all .3s}
+.btn-login:hover{box-shadow:var(--glow-c);transform:translateY(-1px)}
+.avatar{width:38px;height:38px;border-radius:50%;border:2px solid var(--cyan);cursor:pointer;object-fit:cover;box-shadow:var(--glow-c)}
+.profile-wrap{position:relative}
+.profile-menu{position:absolute;top:100%;right:0;margin-top:.5rem;background:var(--card);border:1px solid rgba(0,245,255,.2);border-radius:8px;padding:.5rem;min-width:180px;display:none;z-index:999}
+.profile-wrap.open .profile-menu{display:block}
+.pmenu-item{display:flex;align-items:center;gap:.6rem;padding:.6rem .8rem;border-radius:5px;font-size:.85rem;cursor:pointer;transition:background .2s;color:var(--text);border:none;background:none;width:100%;text-align:left}
+.pmenu-item:hover{background:rgba(255,255,255,.06)}
+.pmenu-item.danger{color:var(--pink)}
+
+/* LOGIN */
+.login-screen{position:fixed;inset:0;z-index:2000;background:var(--bg);display:flex;align-items:center;justify-content:center}
+.login-bg{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 20% 10%,rgba(0,245,255,.08) 0%,transparent 60%),radial-gradient(ellipse 60% 80% at 80% 90%,rgba(255,45,120,.08) 0%,transparent 60%)}
+.login-box{position:relative;z-index:2;background:rgba(255,255,255,.03);border:1px solid rgba(0,245,255,.2);border-radius:16px;padding:2.5rem;max-width:420px;width:100%;margin:1rem;overflow:hidden;text-align:center}
+.login-box::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--cyan),var(--pink),var(--violet))}
+.login-logo{font-family:var(--font-d);font-size:2.5rem;font-weight:900;background:linear-gradient(135deg,var(--cyan),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:.3rem}
+.login-jp{font-family:var(--font-j);color:var(--dim);font-size:.85rem;letter-spacing:3px;margin-bottom:2rem}
+.login-box h2{font-family:var(--font-d);font-size:1rem;letter-spacing:2px;margin-bottom:.5rem}
+.login-box p{color:var(--dim);font-size:.85rem;line-height:1.6;margin-bottom:2rem}
+.btn-google{display:flex;align-items:center;justify-content:center;gap:.8rem;width:100%;background:#fff;color:#333;font-family:var(--font-b);font-size:.9rem;font-weight:700;padding:.9rem;border:none;border-radius:8px;cursor:pointer;transition:all .3s}
+.btn-google:hover{box-shadow:0 8px 30px rgba(255,255,255,.2);transform:translateY(-2px)}
+.login-div{display:flex;align-items:center;gap:1rem;margin:1.5rem 0;color:var(--dim);font-size:.75rem}
+.login-div::before,.login-div::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.08)}
+.btn-guest{width:100%;background:transparent;color:var(--dim);font-family:var(--font-b);font-size:.85rem;font-weight:600;padding:.7rem;border:1px solid rgba(255,255,255,.1);border-radius:8px;cursor:pointer;transition:all .3s}
+.btn-guest:hover{border-color:var(--violet);color:var(--violet)}
+
+/* MAIN */
+main{padding-top:64px;position:relative;z-index:1}
+
+/* HERO */
+.hero{min-height:88vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:4rem 2rem;position:relative;overflow:hidden}
+.hero-content{position:relative;z-index:2;max-width:900px}
+.hero-badge{display:inline-flex;align-items:center;gap:.5rem;background:rgba(0,245,255,.1);border:1px solid rgba(0,245,255,.3);border-radius:20px;padding:.4rem 1rem;font-size:.8rem;letter-spacing:2px;color:var(--cyan);margin-bottom:2rem;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 rgba(0,245,255,.3)}50%{box-shadow:0 0 20px rgba(0,245,255,.3)}}
+.bdot{width:6px;height:6px;border-radius:50%;background:var(--cyan);animation:blink 1s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.hero h1{font-family:var(--font-d);font-size:clamp(2.5rem,8vw,6rem);font-weight:900;line-height:1;background:linear-gradient(135deg,#fff 0%,var(--cyan) 40%,var(--pink) 80%,var(--gold) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:.8rem}
+.hero-sub{font-family:var(--font-j);font-size:1rem;color:var(--dim);letter-spacing:3px;margin-bottom:.5rem}
+.hero-desc{font-size:1.1rem;color:var(--text);max-width:600px;margin:1.5rem auto 3rem;line-height:1.8;opacity:.85}
+.hero-cta{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
+.btn-p{background:linear-gradient(135deg,var(--cyan),var(--violet));color:#000;font-family:var(--font-d);font-size:.75rem;font-weight:700;letter-spacing:2px;padding:1rem 2.5rem;border:none;border-radius:4px;cursor:pointer;transition:all .3s}
+.btn-p:hover{transform:translateY(-3px);box-shadow:0 20px 40px rgba(0,245,255,.4)}
+.btn-s{background:transparent;color:var(--text);font-family:var(--font-d);font-size:.75rem;font-weight:600;letter-spacing:2px;padding:1rem 2.5rem;border:1px solid rgba(255,255,255,.2);border-radius:4px;cursor:pointer;transition:all .3s}
+.btn-s:hover{border-color:var(--pink);color:var(--pink);box-shadow:var(--glow-p)}
+
+/* STATS */
+.stats{display:flex;justify-content:center;gap:4rem;padding:2rem;border-top:1px solid rgba(0,245,255,.1);border-bottom:1px solid rgba(0,245,255,.1);flex-wrap:wrap}
+.stat-n{font-family:var(--font-d);font-size:1.8rem;font-weight:900;background:linear-gradient(135deg,var(--cyan),var(--gold));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat-l{font-size:.75rem;color:var(--dim);letter-spacing:2px;margin-top:.3rem}
+
+/* SECTION */
+.sec-head{display:flex;align-items:center;justify-content:space-between;padding:3rem 2rem 1.5rem;max-width:1400px;margin:0 auto}
+.sec-title{font-family:var(--font-d);font-size:1rem;font-weight:700;letter-spacing:2px;display:flex;align-items:center;gap:.8rem}
+.sdot{width:8px;height:8px;background:var(--cyan);border-radius:50%;box-shadow:0 0 10px var(--cyan);animation:blink 1.5s ease-in-out infinite}
+.see-all{color:var(--cyan);font-size:.8rem;letter-spacing:1px;border:1px solid rgba(0,245,255,.3);padding:.4rem .8rem;border-radius:4px;cursor:pointer;background:none;font-family:var(--font-b);transition:all .3s}
+.see-all:hover{background:rgba(0,245,255,.1)}
+.live-badge{display:inline-flex;align-items:center;gap:.4rem;background:rgba(255,45,120,.15);border:1px solid rgba(255,45,120,.4);color:var(--pink);font-family:var(--font-d);font-size:.6rem;letter-spacing:1.5px;padding:.2rem .6rem;border-radius:3px}
+.ldot{width:5px;height:5px;background:var(--pink);border-radius:50%;animation:blink 1s ease-in-out infinite}
+
+/* CARDS */
+.scroll-row{display:flex;gap:1rem;padding:0 2rem 2rem;overflow-x:auto;scrollbar-width:thin;scrollbar-color:var(--cyan) transparent;max-width:1400px;margin:0 auto}
+.scroll-row::-webkit-scrollbar{height:4px}
+.scroll-row::-webkit-scrollbar-thumb{background:var(--cyan);border-radius:2px}
+.anime-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1.5rem;padding:0 2rem 3rem;max-width:1400px;margin:0 auto}
+.card{position:relative;border-radius:8px;overflow:hidden;cursor:pointer;transition:all .4s cubic-bezier(.175,.885,.32,1.275);background:var(--card);border:1px solid rgba(255,255,255,.05);flex-shrink:0;width:200px}
+.card:hover{transform:translateY(-8px) scale(1.02);border-color:var(--cyan);box-shadow:0 20px 60px rgba(0,245,255,.25);z-index:10}
+.card-grid{width:unset}
+.thumb-wrap{position:relative;overflow:hidden}
+.thumb-wrap::after{content:'';position:absolute;inset:0;background:linear-gradient(to bottom,transparent 50%,rgba(2,2,10,.95) 100%)}
+.thumb-img{width:100%;aspect-ratio:2/3;object-fit:cover;display:block;transition:transform .5s;background:#0a0a1a}
+.card:hover .thumb-img{transform:scale(1.1)}
+.card-overlay{position:absolute;inset:0;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .3s;flex-direction:column;gap:.8rem}
+.card:hover .card-overlay{opacity:1}
+.play-btn{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--violet));display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:#000;border:none;cursor:pointer;transition:transform .3s}
+.play-btn:hover{transform:scale(1.2)}
+.card-fav{background:rgba(255,45,120,.2);border:1px solid var(--pink);color:var(--pink);border-radius:4px;padding:.3rem .8rem;font-size:.7rem;cursor:pointer;font-family:var(--font-d)}
+.card-info{padding:.8rem}
+.card-title{font-family:var(--font-d);font-size:.7rem;font-weight:700;margin-bottom:.3rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-meta{display:flex;gap:.4rem;align-items:center;flex-wrap:wrap}
+.tag{font-size:.6rem;padding:.15rem .4rem;border-radius:3px;letter-spacing:.5px;font-weight:600}
+.tag-ai{background:rgba(0,245,255,.15);color:var(--cyan);border:1px solid rgba(0,245,255,.3)}
+.tag-ep{background:rgba(139,92,246,.15);color:var(--violet);border:1px solid rgba(139,92,246,.3)}
+.tag-dub{background:rgba(255,45,120,.15);color:var(--pink);border:1px solid rgba(255,45,120,.3)}
+.tag-new{background:rgba(255,215,0,.15);color:var(--gold);border:1px solid rgba(255,215,0,.3)}
+.card-rating{position:absolute;top:8px;right:8px;background:rgba(255,215,0,.9);color:#000;font-family:var(--font-d);font-size:.6rem;font-weight:700;padding:.2rem .4rem;border-radius:3px}
+.scan{position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);animation:scan 2s linear infinite}
+@keyframes scan{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+
+/* VIDEO BADGE */
+.video-badge{position:absolute;bottom:40px;left:8px;background:rgba(0,0,0,.8);border:1px solid var(--cyan);color:var(--cyan);font-size:.55rem;padding:.2rem .5rem;border-radius:3px;font-family:var(--font-d);letter-spacing:1px;z-index:5}
+
+/* CATEGORIES */
+.cats{display:flex;gap:.8rem;padding:1rem 2rem 2rem;overflow-x:auto;max-width:1400px;margin:0 auto;scrollbar-width:none}
+.cats::-webkit-scrollbar{display:none}
+.cat{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:var(--dim);font-family:var(--font-b);font-size:.8rem;padding:.5rem 1.2rem;border-radius:20px;cursor:pointer;transition:all .2s;white-space:nowrap;font-weight:600}
+.cat:hover,.cat.active{background:rgba(0,245,255,.1);border-color:var(--cyan);color:var(--cyan)}
+
+/* AI GEN */
+.gen-section{padding:3rem 2rem;background:linear-gradient(135deg,rgba(0,245,255,.02),rgba(139,92,246,.02));border-top:1px solid rgba(0,245,255,.1);border-bottom:1px solid rgba(0,245,255,.1)}
+.gen-wrap{max-width:1400px;margin:0 auto}
+.gen-title{font-family:var(--font-d);font-size:1.5rem;font-weight:900;text-align:center;margin-bottom:.5rem;background:linear-gradient(135deg,var(--cyan),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.gen-sub{text-align:center;color:var(--dim);font-size:.9rem;margin-bottom:2rem;letter-spacing:1px}
+.gen-box{background:var(--card);border:1px solid rgba(0,245,255,.2);border-radius:12px;padding:2rem;max-width:800px;margin:0 auto;position:relative;overflow:hidden}
+.gen-box::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--cyan),var(--pink),var(--violet))}
+.gen-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+.gen-field{display:flex;flex-direction:column;gap:.4rem;margin-bottom:1rem}
+.gen-label{font-size:.7rem;letter-spacing:1.5px;color:var(--cyan);font-family:var(--font-d)}
+.gen-input,.gen-select,.gen-textarea{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:6px;color:var(--text);padding:.7rem 1rem;font-family:var(--font-b);font-size:.9rem;transition:all .3s;outline:none}
+.gen-input:focus,.gen-select:focus,.gen-textarea:focus{border-color:var(--cyan);background:rgba(0,245,255,.05);box-shadow:0 0 20px rgba(0,245,255,.1)}
+.gen-select option{background:var(--bg)}
+.gen-textarea{resize:none;height:80px}
+.gen-btn{display:flex;align-items:center;justify-content:center;gap:.8rem;width:100%;background:linear-gradient(135deg,var(--cyan),var(--pink));color:#000;font-family:var(--font-d);font-size:.75rem;font-weight:700;letter-spacing:2px;padding:1rem;border:none;border-radius:6px;cursor:pointer;transition:all .3s;margin-top:1rem}
+.gen-btn:hover{box-shadow:0 0 40px rgba(0,245,255,.4);transform:translateY(-2px)}
+.gen-btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.spinner{width:18px;height:18px;border:2px solid rgba(0,0,0,.3);border-top-color:#000;border-radius:50%;animation:spin .7s linear infinite;display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+.gen-progress{display:none;margin-top:1.5rem;background:rgba(0,0,0,.3);border:1px solid rgba(0,245,255,.2);border-radius:8px;padding:1.5rem}
+.gen-progress.active{display:block}
+.p-step{display:flex;align-items:center;gap:.8rem;font-size:.85rem;color:var(--dim);margin-bottom:.6rem;transition:color .3s}
+.p-step.active{color:var(--cyan)}
+.p-step.done{color:#4caf50}
+.step-ico{width:20px;height:20px;border-radius:50%;border:2px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:.6rem;flex-shrink:0}
+.step-ico.spin{border-color:var(--cyan);border-top-color:transparent;animation:spin .7s linear infinite}
+.pbar-wrap{margin-top:1rem;background:rgba(255,255,255,.05);border-radius:10px;height:4px;overflow:hidden}
+.pbar-fill{height:100%;background:linear-gradient(90deg,var(--cyan),var(--pink));border-radius:10px;transition:width .5s;width:0%}
+.gen-status{text-align:center;margin-top:1rem;font-size:.75rem;color:var(--cyan);font-family:var(--font-d)}
+
+/* PLAYER */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:9999;display:none;align-items:center;justify-content:center;backdrop-filter:blur(10px)}
+.modal-bg.active{display:flex}
+.player{width:90vw;max-width:1100px;background:var(--card);border:1px solid rgba(0,245,255,.2);border-radius:12px;overflow:hidden;position:relative}
+.p-close{position:absolute;top:1rem;right:1rem;z-index:10;background:rgba(0,0,0,.7);border:1px solid rgba(255,255,255,.2);color:var(--text);width:36px;height:36px;border-radius:50%;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:all .3s}
+.p-close:hover{background:rgba(255,45,120,.5);border-color:var(--pink)}
+.p-video{position:relative;aspect-ratio:16/9;background:#000;overflow:hidden}
+.p-video video,.p-video canvas{width:100%;height:100%;display:block;object-fit:contain}
+.p-video .fallback-canvas{position:absolute;inset:0}
+.p-controls{position:absolute;bottom:0;left:0;right:0;padding:1rem;background:linear-gradient(transparent,rgba(0,0,0,.9));display:flex;flex-direction:column;gap:.5rem}
+.p-prog{width:100%;height:4px;background:rgba(255,255,255,.2);border-radius:2px;cursor:pointer;position:relative}
+.p-prog-fill{height:100%;background:linear-gradient(90deg,var(--cyan),var(--pink));border-radius:2px;width:0%;transition:width .5s;pointer-events:none}
+.p-btns{display:flex;align-items:center;gap:1rem}
+.pbtn{background:none;border:none;color:var(--text);cursor:pointer;font-size:1.1rem;transition:all .2s;padding:.3rem}
+.pbtn:hover{color:var(--cyan);transform:scale(1.2)}
+.p-time{font-family:var(--font-d);font-size:.65rem;color:var(--dim)}
+.dub-wrap{display:flex;align-items:center;gap:.5rem;margin-left:auto}
+.dub-lbl{font-size:.65rem;letter-spacing:1px;color:var(--dim)}
+.dub-sel{background:rgba(0,245,255,.1);border:1px solid rgba(0,245,255,.3);color:var(--cyan);font-family:var(--font-d);font-size:.6rem;padding:.2rem .5rem;border-radius:4px;cursor:pointer;outline:none}
+.p-info{padding:1.5rem 2rem;display:grid;grid-template-columns:1fr auto;gap:1rem;align-items:start}
+.p-title{font-family:var(--font-d);font-size:1.1rem;font-weight:700;margin-bottom:.5rem}
+.p-ep-info{font-size:.85rem;color:var(--dim);display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
+.ep-btns{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:flex-end}
+.ep-btn{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:var(--dim);font-family:var(--font-d);font-size:.6rem;padding:.4rem .7rem;border-radius:4px;cursor:pointer;transition:all .2s}
+.ep-btn.active,.ep-btn:hover{background:rgba(0,245,255,.15);border-color:var(--cyan);color:var(--cyan)}
+
+/* TOAST */
+.toast-wrap{position:fixed;bottom:2rem;right:2rem;z-index:9999;display:flex;flex-direction:column;gap:.5rem}
+.toast{background:var(--card);border:1px solid rgba(0,245,255,.2);border-radius:8px;padding:.8rem 1.2rem;font-size:.85rem;display:flex;align-items:center;gap:.6rem;animation:toastIn .3s ease-out;max-width:300px;transition:all .3s}
+@keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+.toast.success{border-color:#4caf50}
+.toast.error{border-color:var(--pink)}
+
+/* AUTO-GEN TICKER */
+.ticker{background:rgba(0,245,255,.05);border-top:1px solid rgba(0,245,255,.1);border-bottom:1px solid rgba(0,245,255,.1);padding:.6rem 2rem;overflow:hidden;position:relative}
+.ticker-inner{display:flex;gap:3rem;animation:tickerScroll 30s linear infinite;white-space:nowrap}
+@keyframes tickerScroll{from{transform:translateX(100vw)}to{transform:translateX(-100%)}}
+.ticker-item{font-family:var(--font-d);font-size:.65rem;color:var(--cyan);letter-spacing:1px}
+
+/* AUTO GENERATE COUNTDOWN */
+.autogen-bar{background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.2);border-radius:8px;padding:1rem 1.5rem;max-width:1400px;margin:0 auto 1rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem}
+.autogen-info{display:flex;align-items:center;gap:.8rem}
+.autogen-icon{font-size:1.5rem;animation:pulse 2s ease-in-out infinite}
+.autogen-text{font-family:var(--font-d);font-size:.75rem;color:var(--violet);letter-spacing:1px}
+.autogen-sub{font-size:.75rem;color:var(--dim);margin-top:.2rem}
+.countdown{font-family:var(--font-d);font-size:1.5rem;font-weight:900;color:var(--cyan);text-shadow:0 0 20px rgba(0,245,255,.5)}
+
+/* PAGE SECTIONS */
+.page{display:none;padding:2rem;max-width:1400px;margin:0 auto}
+.page.active{display:block}
+.page-title{font-family:var(--font-d);font-size:1.5rem;margin-bottom:2rem;background:linear-gradient(135deg,var(--cyan),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.empty-state{text-align:center;padding:4rem;color:var(--dim)}
+.empty-state .emoji{font-size:3rem;margin-bottom:1rem}
+.empty-state .empty-title{font-family:var(--font-d);font-size:.9rem;letter-spacing:2px}
+
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-thumb{background:rgba(0,245,255,.3);border-radius:3px}
+
+@media(max-width:768px){
+  .nav-links{display:none}
+  .gen-row{grid-template-columns:1fr}
+  .stats{gap:2rem}
+  .p-info{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-bg"></div>
+  <div class="login-box">
+    <div class="login-logo">KlokKlok</div>
+    <div class="login-jp">クロッククロック • AI アニメ宇宙</div>
+    <h2>SELAMAT DATANG</h2>
+    <p>Masuk untuk menonton & membuat anime AI real-time dengan video & dubbing asli.</p>
+    <button class="btn-google" id="btnGoogle">
+      <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Masuk dengan Google
+    </button>
+    <div class="login-div">atau</div>
+    <button class="btn-guest" id="btnGuest">Lanjutkan sebagai Tamu</button>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <div class="logo" onclick="goHome()">KlokKlok</div>
+  <ul class="nav-links">
+    <li><a onclick="goHome()">Beranda</a></li>
+    <li><a onclick="showPage('browse')">Jelajahi</a></li>
+    <li><a onclick="showPage('mylist')">Daftar Ku</a></li>
+    <li><a onclick="scrollToGen()">Buat Anime</a></li>
+  </ul>
+  <div class="nav-right">
+    <input class="search" placeholder="🔍 Cari anime..." oninput="searchAnime(this.value)">
+    <div class="profile-wrap" id="profileWrap" style="display:none">
+      <img class="avatar" id="userAvatar" src="" onclick="toggleMenu()">
+      <div class="profile-menu" id="profileMenu">
+        <button class="pmenu-item">👤 <span id="menuName">User</span></button>
+        <button class="pmenu-item" onclick="showPage('mylist')">❤️ Daftar Ku</button>
+        <button class="pmenu-item" onclick="showPage('generated')">✨ Buatan Ku</button>
+        <button class="pmenu-item danger" onclick="logout()">🚪 Keluar</button>
+      </div>
+    </div>
+    <button class="btn-login" id="btnNavLogin" onclick="showLoginScreen()" style="display:none">MASUK</button>
+  </div>
+</nav>
+
+<main id="mainApp" style="display:none">
+
+  <!-- TICKER -->
+  <div class="ticker">
+    <div class="ticker-inner" id="ticker">
+      <span class="ticker-item">⚡ AI sedang generate anime baru...</span>
+      <span class="ticker-item">🎬 Stellar Phantom EP12 selesai dirender</span>
+      <span class="ticker-item">🎤 Dubbing Indonesia tersedia untuk semua anime</span>
+      <span class="ticker-item">✨ Anime baru otomatis dibuat setiap 10 menit</span>
+    </div>
+  </div>
+
+  <!-- HOME -->
+  <div id="homePage">
+
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-content">
+        <div class="hero-badge"><span class="bdot"></span>REAL-TIME AI ANIME • VIDEO & DUBBING ASLI</div>
+        <h1>KlokKlok</h1>
+        <div class="hero-sub">クロッククロック • AI アニメ宇宙</div>
+        <p class="hero-desc">Platform streaming anime pertama yang videonya dibuat langsung oleh Kling AI dengan dubbing suara asli per bahasa — bukan animasi palsu.</p>
+        <div class="hero-cta">
+          <button class="btn-p" onclick="scrollToGen()">✨ BUAT ANIMEKU</button>
+          <button class="btn-s" onclick="openPlayer(0)">▶ TONTON SEKARANG</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- STATS -->
+    <div class="stats">
+      <div><div class="stat-n" id="sAnime">0</div><div class="stat-l">ANIME AI</div></div>
+      <div><div class="stat-n" id="sEp">0</div><div class="stat-l">EPISODE</div></div>
+      <div><div class="stat-n">4</div><div class="stat-l">BAHASA DUB</div></div>
+      <div><div class="stat-n" id="sUsers">0</div><div class="stat-l">PENONTON</div></div>
+    </div>
+
+    <!-- AUTO GEN COUNTDOWN -->
+    <div style="padding:1.5rem 2rem 0">
+      <div class="autogen-bar">
+        <div class="autogen-info">
+          <span class="autogen-icon">🤖</span>
+          <div>
+            <div class="autogen-text">AUTO AI GENERATION AKTIF</div>
+            <div class="autogen-sub">Anime baru dibuat otomatis setiap 10 menit dengan video Kling AI + dubbing asli</div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:.7rem;color:var(--dim);text-align:center;margin-bottom:.3rem">NEXT ANIME IN</div>
+          <div class="countdown" id="countdown">10:00</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRENDING -->
+    <div class="sec-head">
+      <div class="sec-title"><span class="sdot"></span>TRENDING</div>
+      <button class="see-all" onclick="showPage('browse')">Lihat Semua →</button>
+    </div>
+    <div class="scroll-row" id="trendingRow"></div>
+
+    <!-- BARU DIBUAT AI -->
+    <div class="sec-head">
+      <div class="sec-title"><span class="sdot"></span>BARU DIBUAT AI</div>
+      <div class="live-badge"><span class="ldot"></span>LIVE</div>
+    </div>
+    <div class="scroll-row" id="recentRow"></div>
+
+    <!-- CATEGORIES -->
+    <div class="cats" id="cats">
+      <button class="cat active" onclick="filterGenre('all',this)">🌟 Semua</button>
+      <button class="cat" onclick="filterGenre('action',this)">⚔️ Action</button>
+      <button class="cat" onclick="filterGenre('romance',this)">💕 Romance</button>
+      <button class="cat" onclick="filterGenre('scifi',this)">🚀 Sci-Fi</button>
+      <button class="cat" onclick="filterGenre('fantasy',this)">🧙 Fantasy</button>
+      <button class="cat" onclick="filterGenre('horror',this)">👻 Horror</button>
+      <button class="cat" onclick="filterGenre('comedy',this)">😂 Comedy</button>
+      <button class="cat" onclick="filterGenre('mecha',this)">🤖 Mecha</button>
+      <button class="cat" onclick="filterGenre('isekai',this)">🌀 Isekai</button>
+    </div>
+
+    <!-- AI GEN SECTION -->
+    <div class="gen-section" id="genSection">
+      <div class="gen-wrap">
+        <div class="gen-title">✨ BUAT ANIME AI SENDIRI</div>
+        <div class="gen-sub">AI akan buat video animasi asli + dubbing suara per bahasa secara real-time</div>
+        <div class="gen-box">
+          <div class="gen-row">
+            <div class="gen-field">
+              <label class="gen-label">JUDUL ANIME</label>
+              <input class="gen-input" id="genTitle" placeholder="Contoh: Naga Biru Terakhir">
+            </div>
+            <div class="gen-field">
+              <label class="gen-label">GENRE</label>
+              <select class="gen-select" id="genGenre">
+                <option value="action">⚔️ Action</option>
+                <option value="romance">💕 Romance</option>
+                <option value="scifi">🚀 Sci-Fi</option>
+                <option value="fantasy">🧙 Fantasy</option>
+                <option value="horror">👻 Horror</option>
+                <option value="comedy">😂 Comedy</option>
+                <option value="mecha">🤖 Mecha</option>
+                <option value="isekai">🌀 Isekai</option>
+              </select>
+            </div>
+          </div>
+          <div class="gen-row">
+            <div class="gen-field">
+              <label class="gen-label">JUMLAH EPISODE</label>
+              <select class="gen-select" id="genEps">
+                <option value="1">1 Episode</option>
+                <option value="6">6 Episode</option>
+                <option value="12" selected>12 Episode</option>
+                <option value="24">24 Episode</option>
+              </select>
+            </div>
+            <div class="gen-field">
+              <label class="gen-label">DUBBING</label>
+              <select class="gen-select" id="genDub">
+                <option value="id">🇮🇩 Indonesia</option>
+                <option value="en">🇬🇧 English</option>
+                <option value="ja">🇯🇵 Japanese</option>
+                <option value="all">🌍 Semua Bahasa</option>
+              </select>
+            </div>
+          </div>
+          <div class="gen-field">
+            <label class="gen-label">DESKRIPSI CERITA</label>
+            <textarea class="gen-textarea" id="genDesc" placeholder="Ceritakan sinopsis anime impianmu..."></textarea>
+          </div>
+          <div class="gen-row">
+            <div class="gen-field">
+              <label class="gen-label">GAYA VISUAL</label>
+              <select class="gen-select" id="genStyle">
+                <option value="modern anime">✨ Modern Anime</option>
+                <option value="retro 90s anime">📺 Retro 90s</option>
+                <option value="dark fantasy anime">🌑 Dark Fantasy</option>
+                <option value="colorful bright anime">🌈 Colorful</option>
+              </select>
+            </div>
+            <div class="gen-field">
+              <label class="gen-label">TARGET</label>
+              <select class="gen-select" id="genTarget">
+                <option value="shounen">⚡ Shounen</option>
+                <option value="shoujo">🌸 Shoujo</option>
+                <option value="seinen">🎭 Seinen</option>
+                <option value="all">👥 Semua</option>
+              </select>
+            </div>
+          </div>
+          <button class="gen-btn" id="genBtn" onclick="generateAnime()">
+            <span id="genBtnTxt">⚡ GENERATE ANIME + VIDEO + DUBBING</span>
+            <div class="spinner" id="genSpinner"></div>
+          </button>
+          <div class="gen-progress" id="genProg">
+            <div id="genSteps"></div>
+            <div class="pbar-wrap"><div class="pbar-fill" id="pbar"></div></div>
+            <div class="gen-status" id="genStatus">Memulai...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ALL ANIME -->
+    <div class="sec-head">
+      <div class="sec-title"><span class="sdot"></span>SEMUA ANIME AI</div>
+    </div>
+    <div class="anime-grid" id="mainGrid"></div>
+
+  </div><!-- end homePage -->
+
+  <!-- BROWSE PAGE -->
+  <div class="page" id="browsePage">
+    <div class="page-title">🎌 JELAJAHI SEMUA ANIME AI</div>
+    <div class="anime-grid" id="browseGrid"></div>
+  </div>
+
+  <!-- MY LIST PAGE -->
+  <div class="page" id="mylistPage">
+    <div class="page-title">❤️ DAFTAR FAVORITKU</div>
+    <div class="anime-grid" id="mylistGrid"></div>
+    <div class="empty-state" id="mylistEmpty" style="display:none">
+      <div class="emoji">💔</div>
+      <div class="empty-title">BELUM ADA ANIME DI DAFTAR</div>
+    </div>
+  </div>
+
+  <!-- GENERATED PAGE -->
+  <div class="page" id="generatedPage">
+    <div class="page-title">✨ ANIME BUATANKU</div>
+    <div class="anime-grid" id="generatedGrid"></div>
+    <div class="empty-state" id="generatedEmpty" style="display:none">
+      <div class="emoji">🎬</div>
+      <div class="empty-title">BELUM ADA ANIME BUATANMU</div>
+      <br>
+      <button class="btn-p" onclick="scrollToGen();goHome()">BUAT SEKARANG</button>
+    </div>
+  </div>
+
+</main>
+
+<!-- PLAYER -->
+<div class="modal-bg" id="playerModal">
+  <div class="player">
+    <button class="p-close" onclick="closePlayer()">✕</button>
+    <div class="p-video" id="pVideoWrap">
+      <!-- Video element untuk Kling AI video -->
+      <video id="pVideo" style="display:none" playsinline></video>
+      <!-- Fallback canvas kalau video belum siap -->
+      <canvas id="pCanvas" class="fallback-canvas"></canvas>
+      <!-- Loading overlay -->
+      <div id="pLoading" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,.7);z-index:5">
+        <div style="width:50px;height:50px;border:3px solid rgba(0,245,255,.3);border-top-color:var(--cyan);border-radius:50%;animation:spin .7s linear infinite;margin-bottom:1rem"></div>
+        <div style="font-family:var(--font-d);font-size:.75rem;color:var(--cyan);letter-spacing:2px" id="pLoadTxt">MEMUAT VIDEO AI...</div>
+      </div>
+    </div>
+    <div class="p-controls">
+      <div class="p-prog" onclick="seekVideo(event)">
+        <div class="p-prog-fill" id="pProgFill"></div>
+      </div>
+      <div class="p-btns">
+        <button class="pbtn" id="playPauseBtn" onclick="togglePlay()">▶</button>
+        <button class="pbtn" onclick="prevEp()">⏮</button>
+        <button class="pbtn" onclick="nextEp()">⏭</button>
+        <span class="p-time" id="pTime">0:00 / 0:00</span>
+        <div class="dub-wrap">
+          <span class="dub-lbl">DUB:</span>
+          <select class="dub-sel" id="dubSel" onchange="changeDub(this.value)">
+            <option value="id">🇮🇩 IND</option>
+            <option value="en">🇬🇧 ENG</option>
+            <option value="ja">🇯🇵 JPN</option>
+            <option value="sub">📝 SUB</option>
+          </select>
+        </div>
+        <button class="pbtn" onclick="toggleFS()">⛶</button>
+      </div>
+    </div>
+    <div class="p-info">
+      <div>
+        <div class="p-title" id="pTitle">–</div>
+        <div class="p-ep-info">
+          <span class="tag tag-ai">AI VIDEO</span>
+          <span id="pEpLabel">–</span>
+          <span class="tag tag-dub" id="pDubLabel">🇮🇩 DUB Indonesia</span>
+        </div>
+      </div>
+      <div class="ep-btns" id="epBtns"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<canvas id="particles" style="position:fixed;inset:0;pointer-events:none;z-index:0"></canvas>
+
+<script>
+// ===== FIREBASE =====
+const fbConfig = {
+  apiKey: "AIzaSyDDFZE9r_MHxBdHOzp7io5cIuLvQ_BRz9o",
+  authDomain: "mova-ab5dd.firebaseapp.com",
+  projectId: "mova-ab5dd",
+  storageBucket: "mova-ab5dd.firebasestorage.app",
+  messagingSenderId: "490666288433",
+  appId: "1:490666288433:web:14bf479f596ac8037bfc10"
+};
+firebase.initializeApp(fbConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// ===== STATE =====
+let currentUser = null, isGuest = false;
+let animeDB = [], myList = [], myGenerated = [];
+let curAnimeIdx = 0, curEp = 0, curDub = 'id';
+let playerPlaying = false, playerInterval = null, playerTime = 0;
+let pCanvas = null, pCtx = null, pAnimFrame = null;
+let curGenre = 'all';
+let generating = false;
+let autoGenTimer = 600; // 10 menit = 600 detik
+let autoGenInterval = null;
+let dubAudio = null; // Audio element untuk TTS dubbing
+
+// ===== PRESET ANIME =====
+const PRESETS = [
+  {title:'Stellar Phantom',genre:'scifi',eps:12,desc:'Gadis menemukan kekuatan kuno di antara bintang padam.',c1:'#001133',c2:'#0044aa',acc:'#00f5ff',rating:'9.2'},
+  {title:'Darah Naga Terakhir',genre:'fantasy',eps:12,desc:'Pendekar keturunan naga melawan kejahatan abadi.',c1:'#1a0000',c2:'#4a0000',acc:'#ff4400',rating:'8.8'},
+  {title:'Kisah Di Antara Sakura',genre:'romance',eps:12,desc:'Dua jiwa bertemu di bawah pohon sakura.',c1:'#1a0019',c2:'#3d0038',acc:'#ff69b4',rating:'9.0'},
+  {title:'Robo Warriors X',genre:'mecha',eps:12,desc:'Pilot muda vs invasi alien dengan robot raksasa.',c1:'#000e1a',c2:'#002244',acc:'#00bbff',rating:'8.5'},
+  {title:'Sekolah Dunia Lain',genre:'isekai',eps:12,desc:'Pelajar biasa jatuh ke dimensi paralel.',c1:'#001100',c2:'#003300',acc:'#44ff44',rating:'8.3'},
+  {title:'Bayangan Tersembunyi',genre:'horror',eps:6,desc:'Teror bayangan di kota kuno.',c1:'#080008',c2:'#1a0033',acc:'#aa00ff',rating:'8.7'},
+  {title:'Sang Jenius Komedi',genre:'comedy',eps:12,desc:'Siswa paling aneh di sekolah elite.',c1:'#1a1000',c2:'#3a2800',acc:'#ffcc00',rating:'8.1'},
+  {title:'Baja & Jiwa',genre:'action',eps:24,desc:'Pejuang tubuh baja berjuang untuk keadilan.',c1:'#0a0a0a',c2:'#1a1a1a',acc:'#ff2d78',rating:'9.1'},
+];
+
+// ===== INIT =====
+window.addEventListener('load', () => {
+  initParticles();
+  buildAnimeDB();
+  startAutoGenCountdown();
+  auth.onAuthStateChanged(u => u ? loginSuccess(u) : showLoginScreen());
+});
+
+// ===== AUTH =====
+document.getElementById('btnGoogle').onclick = async () => {
+  try { await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
+  catch(e) { toast('Gagal login: ' + e.message, 'error'); }
+};
+document.getElementById('btnGuest').onclick = () => {
+  isGuest = true;
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'block';
+  document.getElementById('btnNavLogin').style.display = 'flex';
+  toast('Masuk sebagai tamu 👋', 'info');
+};
+
+function loginSuccess(user) {
+  currentUser = user;
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'block';
+  document.getElementById('profileWrap').style.display = 'flex';
+  document.getElementById('btnNavLogin').style.display = 'none';
+  document.getElementById('userAvatar').src = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName)}&background=00f5ff&color=000`;
+  document.getElementById('menuName').textContent = user.displayName?.split(' ')[0];
+  loadUserData();
+  toast(`Selamat datang, ${user.displayName?.split(' ')[0]}! 🎌`, 'success');
+}
+
+function showLoginScreen() {
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('mainApp').style.display = 'none';
+}
+
+async function logout() {
+  await auth.signOut();
+  currentUser = null; isGuest = false;
+  document.getElementById('profileWrap').style.display = 'none';
+  document.getElementById('btnNavLogin').style.display = 'flex';
+  showLoginScreen();
+}
+
+function toggleMenu() { document.getElementById('profileWrap').classList.toggle('open'); }
+document.addEventListener('click', e => { if(!e.target.closest('.profile-wrap')) document.getElementById('profileWrap').classList.remove('open'); });
+
+async function loadUserData() {
+  if (!currentUser) return;
+  try {
+    const doc = await db.collection('users').doc(currentUser.uid).get();
+    if (doc.exists) { const d = doc.data(); myList = d.myList||[]; myGenerated = d.generated||[]; }
+  } catch(e) {}
+  renderAll();
+}
+
+async function saveUserData() {
+  if (!currentUser) return;
+  try { await db.collection('users').doc(currentUser.uid).set({ myList, generated: myGenerated, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }); }
+  catch(e) {}
+}
+
+// ===== ANIME DB =====
+function buildAnimeDB() {
+  animeDB = PRESETS.map((p,i) => ({
+    ...p, id: i,
+    episodes: Array.from({length:p.eps},(_,ep)=>({
+      num:ep+1, title:genEpTitle(p.genre,ep+1),
+      videoUrl: null, videoTaskId: null, videoStatus: 'pending',
+      dubs: { id:null, en:null, ja:null, sub:null }
+    })),
+    likes:Math.floor(Math.random()*5000+500),
+    views:Math.floor(Math.random()*50000+5000),
+    isGenerated: false, createdAt: Date.now()-Math.random()*86400000*30
+  }));
+  renderAll();
+  animateStats();
+}
+
+function genEpTitle(genre, num) {
+  const t = {
+    action:['Awal Pertempuran','Musuh Tersembunyi','Kekuatan Baru','Batas Terlampaui','Badai Datang','Kepercayaan','Pengkhianatan','Titik Balik','Api Abadi','Satu Lawan Semua','Kebangkitan','Final Battle','Cahaya Terakhir','Takdir','Kemenangan','Epilog','Sang Juara','Warisan','Harapan Baru','Perjalanan Berlanjut','Langit Baru','Dunia Berubah','Kenangan','Mimpi'],
+    romance:['Pertemuan Tak Terduga','Perasaan Baru','Kata-Kata Tak Terucap','Di Bawah Hujan','Surat Cinta','Momen Berdua','Salah Paham','Mengakui Perasaan','Hari Sempurna','Janji','Cinta Sejati','Bersama Selalu'],
+    scifi:['Transmisi Misterius','Koordinat Galaksi X','Anomali Ruang','Kontak Pertama','Protokol Darurat','Dimensi Ketiga','Singularitas','Kode Terlarang','Portal Terbuka','Medan Gravitasi','Badai Kosmik','Inti Bintang'],
+    fantasy:['Ramalan Kuno','Batu Ajaib','Naga Pertama','Kutukan Hutan','Kerajaan Bayangan','Pedang Legenda','Sihir Terlarang','Gerbang Dunia Lain','Raja Iblis','Pahlawan Sejati','Kemenangan Cahaya','Takdir Terpenuhi'],
+    horror:['Bisikan','Pintu Terkunci','Jejak Gelap','Malam Keempat','Ritual','Tak Kembali'],
+    comedy:['Hari Pertama Chaos','Teman Aneh','Rencana Gagal','Salah Kostum','Kencan Bencana','Ujian Akhir','Festival Disaster','Perpisahan Kocak','Liburan Gila','Plot Twist','Reunian','Happy Ending'],
+    mecha:['Aktivasi Awal','Pilot Baru','Kalibrasi Senjata','Musuh Pertama','Upgrade Darurat','Pertempuran Orbit','Aliansi','Pengorbanan','Last Stand','Serangan Balik','Puncak Pertempuran','Perdamaian'],
+    isekai:['Transmigration','Level 1','Quest Pertama','Party Terbentuk','Dungeon I','Magic Unlock','Boss Pertama','Kota Baru','Misteri Dunia','Hidden Power','Final Boss','Kembali?'],
+  };
+  const arr = t[genre] || t.action;
+  return arr[(num-1)%arr.length];
+}
+
+// ===== RENDER =====
+function renderAll() {
+  const filtered = curGenre==='all' ? animeDB : animeDB.filter(a=>a.genre===curGenre);
+  const sorted = [...animeDB].sort((a,b)=>b.views-a.views);
+
+  document.getElementById('mainGrid').innerHTML = filtered.map(a=>cardHTML(a,false)).join('');
+  document.getElementById('browseGrid').innerHTML = filtered.map(a=>cardHTML(a,false)).join('');
+  document.getElementById('trendingRow').innerHTML = sorted.slice(0,8).map(a=>cardHTML(a,true)).join('');
+  document.getElementById('recentRow').innerHTML = [...animeDB].sort((a,b)=>b.createdAt-a.createdAt).slice(0,8).map(a=>cardHTML(a,true)).join('');
+
+  setTimeout(() => animeDB.forEach(a => {
+    ['thumb_'+a.id, 'thumb2_'+a.id].forEach(id => {
+      const c = document.getElementById(id);
+      if(c) drawThumb(c, a);
+    });
+  }), 50);
+
+  renderMyList(); renderGenerated();
+}
+
+function cardHTML(anime, scroll) {
+  const isLiked = myList.includes(anime.id);
+  const hasVideo = anime.episodes[0]?.videoUrl;
+  return `
+  <div class="card${scroll?'':' card-grid'}" onclick="openPlayer(${anime.id})">
+    <div class="thumb-wrap">
+      <canvas id="thumb${scroll?'2':'_'}${anime.id}" class="thumb-img" width="200" height="300"></canvas>
+      ${hasVideo ? '<div class="video-badge">🎬 VIDEO AI</div>' : ''}
+      <div class="card-rating">${anime.rating}</div>
+      <div class="scan"></div>
+      <div class="card-overlay">
+        <button class="play-btn">▶</button>
+        <button class="card-fav" onclick="event.stopPropagation();toggleFav(${anime.id})">${isLiked?'❤️ SAVED':'🤍 SIMPAN'}</button>
+      </div>
+    </div>
+    <div class="card-info">
+      <div class="card-title">${anime.title}</div>
+      <div class="card-meta">
+        <span class="tag tag-ai">${hasVideo?'VIDEO AI':'AI'}</span>
+        <span class="tag tag-ep">${anime.eps}EP</span>
+        <span class="tag tag-dub">DUB</span>
+        ${anime.isGenerated?'<span class="tag tag-new">MINE</span>':''}
+      </div>
+    </div>
+  </div>`;
+}
+
+function drawThumb(canvas, anime) {
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w=canvas.width, h=canvas.height;
+  const g = ctx.createLinearGradient(0,0,w,h);
+  g.addColorStop(0, anime.c1||'#001133');
+  g.addColorStop(1, anime.c2||'#002244');
+  ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+  const acc = anime.acc||'#00f5ff';
+  ctx.strokeStyle=acc; ctx.lineWidth=1; ctx.globalAlpha=0.1;
+  for(let i=0;i<w;i+=20){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,h);ctx.stroke();}
+  for(let j=0;j<h;j+=20){ctx.beginPath();ctx.moveTo(0,j);ctx.lineTo(w,j);ctx.stroke();}
+  ctx.globalAlpha=1;
+  ctx.fillStyle=acc; ctx.globalAlpha=0.6;
+  const cx=w*.5,cy=h*.35;
+  ctx.beginPath(); ctx.arc(cx,cy,w*.12,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle=anime.c2||'#002244'; ctx.globalAlpha=1;
+  ctx.beginPath(); ctx.arc(cx,cy-w*.04,w*.13,Math.PI,Math.PI*2); ctx.fill();
+  ctx.fillStyle=acc; ctx.globalAlpha=0.7;
+  ctx.beginPath(); ctx.moveTo(cx-w*.1,cy+w*.14); ctx.lineTo(cx+w*.1,cy+w*.14); ctx.lineTo(cx+w*.08,cy+h*.35); ctx.lineTo(cx-w*.08,cy+h*.35); ctx.closePath(); ctx.fill();
+  const glow=ctx.createRadialGradient(cx,cy,0,cx,cy,w*.4);
+  glow.addColorStop(0,acc+'44'); glow.addColorStop(1,'transparent');
+  ctx.fillStyle=glow; ctx.globalAlpha=0.8; ctx.fillRect(0,0,w,h);
+  ctx.globalAlpha=1;
+  ctx.fillStyle='#fff'; ctx.font=`bold ${Math.max(8,w*.06)}px Orbitron,monospace`;
+  ctx.textAlign='center'; ctx.shadowColor=acc; ctx.shadowBlur=10;
+  const words=anime.title.split(' '); let line='',y=h*.82;
+  words.forEach((word,i)=>{
+    const test=line+word+' ';
+    if(ctx.measureText(test).width>w*.85&&i>0){ctx.fillText(line,cx,y);line=word+' ';y+=14;}
+    else{line=test;}
+  });
+  ctx.fillText(line.trim(),cx,y);
+  ctx.font=`${Math.max(7,w*.05)}px Rajdhani,sans-serif`; ctx.fillStyle=acc; ctx.shadowBlur=5;
+  ctx.fillText(anime.genre.toUpperCase(),cx,h*.93);
+  ctx.shadowBlur=0;
+}
+
+// ===== AUTO GENERATE EVERY 10 MINUTES =====
+function startAutoGenCountdown() {
+  autoGenTimer = 600;
+  clearInterval(autoGenInterval);
+  autoGenInterval = setInterval(async () => {
+    autoGenTimer--;
+    updateCountdown();
+    if (autoGenTimer <= 0) {
+      autoGenTimer = 600;
+      await autoGenerateAnime();
+    }
+  }, 1000);
+}
+
+function updateCountdown() {
+  const m = Math.floor(autoGenTimer/60).toString().padStart(2,'0');
+  const s = (autoGenTimer%60).toString().padStart(2,'0');
+  const el = document.getElementById('countdown');
+  if (el) el.textContent = `${m}:${s}`;
+}
+
+async function autoGenerateAnime() {
+  const genres = ['action','romance','scifi','fantasy','horror','comedy','mecha','isekai'];
+  const styles = ['modern anime','dark fantasy anime','colorful bright anime','retro 90s anime'];
+  const randomGenre = genres[Math.floor(Math.random()*genres.length)];
+  const randomStyle = styles[Math.floor(Math.random()*styles.length)];
+  const randomTitles = {
+    action:['Pedang Terakhir','Harimau Besi','Badai Api','Sang Ksatria'],
+    romance:['Bunga Di Musim Dingin','Satu Malam','Janji Abadi','Cinta Di Antara Bintang'],
+    scifi:['Nebula Merah','Stasiun Z','Protokol Omega','Quantum Hearts'],
+    fantasy:['Mahkota Abadi','Hutan Terlarang','Raja Bayangan','Pedang Cahaya'],
+    horror:['Rumah 13','Bisikan Malam','Cermin Retak','Jejak Hilang'],
+    comedy:['SMA Kacau','Duo Ajaib','Chef Gila','Pahlawan Salah'],
+    mecha:['Iron Titan','Gundam Neo','Mech Zero','Battle Frame'],
+    isekai:['Reborn Hero','Another World','Level MAX','Isekai Log'],
+  };
+  const titles = randomTitles[randomGenre];
+  const title = titles[Math.floor(Math.random()*titles.length)] + ' ' + (2025 + Math.floor(animeDB.length/10));
+
+  toast(`🤖 Auto-generating anime baru: "${title}"`, 'info');
+
+  // Generate sinopsis dengan Claude
+  let synopsis = `Sebuah anime ${randomGenre} yang penuh petualangan dan kejutan.`;
+  try {
+    const r = await fetch('/api/generate-story', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ title, genre: randomGenre, style: randomStyle })
+    });
+    const d = await r.json();
+    if (d.synopsis) synopsis = d.synopsis;
+  } catch(e) {}
+
+  const sc = {
+    'modern anime':{c1:'#001122',c2:'#002244',acc:'#00f5ff'},
+    'dark fantasy anime':{c1:'#0a0010',c2:'#150020',acc:'#aa00ff'},
+    'colorful bright anime':{c1:'#001a10',c2:'#003320',acc:'#00ffaa'},
+    'retro 90s anime':{c1:'#1a0a00',c2:'#2a1500',acc:'#ff8800'},
+  }[randomStyle] || {c1:'#001122',c2:'#002244',acc:'#00f5ff'};
+
+  const newAnime = {
+    id: animeDB.length, title, genre: randomGenre,
+    eps: [6,12][Math.floor(Math.random()*2)],
+    desc: synopsis, style: randomStyle,
+    rating: (Math.random()*1.5+8).toFixed(1),
+    c1: sc.c1, c2: sc.c2, acc: sc.acc,
+    episodes: [], likes: 0, views: 1,
+    isGenerated: true, createdAt: Date.now(), autoGenerated: true
+  };
+  newAnime.episodes = Array.from({length:newAnime.eps},(_,ep)=>({
+    num:ep+1, title:genEpTitle(newAnime.genre,ep+1),
+    videoUrl:null, videoTaskId:null, videoStatus:'pending',
+    dubs:{id:null,en:null,ja:null,sub:null}
+  }));
+
+  animeDB.unshift(newAnime);
+
+  // Re-assign IDs
+  animeDB.forEach((a,i)=>a.id=i);
+
+  renderAll();
+  animateStats();
+  toast(`✅ "${title}" berhasil dibuat & ditambahkan!`, 'success');
+
+  // Generate video EP1 di background
+  generateVideoForEp(0, 0);
+}
+
+// ===== KLING VIDEO GENERATION =====
+async function generateVideoForEp(animeIdx, epIdx) {
+  const anime = animeDB[animeIdx];
+  if (!anime || !anime.episodes[epIdx]) return;
+
+  const ep = anime.episodes[epIdx];
+  const prompt = `${ep.title}. ${anime.desc}. ${anime.genre} scene. ${anime.style || 'modern anime'} art style. Anime character in action, expressive, detailed.`;
+
+  try {
+    // Submit ke Kling via serverless function
+    const r = await fetch('/api/generate-video', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        prompt, animeTitle: anime.title,
+        genre: anime.genre, episode: ep.num, style: anime.style
+      })
+    });
+    const data = await r.json();
+    if (data.taskId) {
+      ep.videoTaskId = data.taskId;
+      ep.videoStatus = 'processing';
+      // Poll status
+      pollVideoStatus(animeIdx, epIdx, data.taskId);
+    }
+  } catch(e) {
+    console.error('Video gen error:', e);
+  }
+}
+
+async function pollVideoStatus(animeIdx, epIdx, taskId) {
+  let tries = 0;
+  const poll = async () => {
+    if (tries++ > 60) return; // max 5 menit polling
+    try {
+      const r = await fetch(`/api/check-video?taskId=${taskId}`);
+      const d = await r.json();
+      if (d.status === 'done' && d.videoUrl) {
+        animeDB[animeIdx].episodes[epIdx].videoUrl = d.videoUrl;
+        animeDB[animeIdx].episodes[epIdx].videoStatus = 'done';
+        renderAll();
+        toast(`🎬 Video "${animeDB[animeIdx].title}" EP${epIdx+1} siap!`, 'success');
+      } else if (d.status === 'processing') {
+        setTimeout(poll, 5000); // cek lagi 5 detik
+      }
+    } catch(e) { setTimeout(poll, 10000); }
+  };
+  setTimeout(poll, 5000);
+}
+
+// ===== TTS DUBBING =====
+async function generateDubbing(text, lang) {
+  try {
+    const r = await fetch('/api/generate-dub', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ text, language: lang })
+    });
+    const d = await r.json();
+    if (d.audioContent) {
+      // Base64 MP3 → play
+      const audio = new Audio(`data:audio/mp3;base64,${d.audioContent}`);
+      return audio;
+    }
+  } catch(e) {}
+  return null;
+}
+
+// ===== PLAYER =====
+function openPlayer(animeId) {
+  curAnimeIdx = animeId; curEp = 0;
+  const anime = animeDB[animeId];
+  document.getElementById('playerModal').classList.add('active');
+  document.getElementById('pTitle').textContent = anime.title;
+  updateEpBtns();
+  loadEpisode();
+}
+
+function closePlayer() {
+  document.getElementById('playerModal').classList.remove('active');
+  const vid = document.getElementById('pVideo');
+  vid.pause(); vid.src='';
+  stopPlayerTimer();
+  if (pAnimFrame) cancelAnimationFrame(pAnimFrame);
+  if (dubAudio) { dubAudio.pause(); dubAudio=null; }
+}
+
+function loadEpisode() {
+  const anime = animeDB[curAnimeIdx];
+  const ep = anime.episodes[curEp];
+  const vid = document.getElementById('pVideo');
+  const canvas = document.getElementById('pCanvas');
+  const loading = document.getElementById('pLoading');
+
+  document.getElementById('pEpLabel').textContent = `Episode ${ep.num} — ${ep.title}`;
+  document.getElementById('pDubLabel').textContent = {id:'🇮🇩 DUB Indonesia',en:'🇬🇧 DUB English',ja:'🇯🇵 DUB Japan',sub:'📝 Subtitle'}[curDub];
+
+  // Resize canvas
+  const wrap = document.getElementById('pVideoWrap');
+  canvas.width = wrap.offsetWidth || 960;
+  canvas.height = wrap.offsetHeight || 540;
+  pCanvas = canvas;
+  pCtx = canvas.getContext('2d');
+
+  if (ep.videoUrl) {
+    // Ada video Kling AI
+    loading.style.display='flex';
+    document.getElementById('pLoadTxt').textContent='MEMUAT VIDEO AI...';
+    vid.style.display='block';
+    canvas.style.display='none';
+    vid.src = ep.videoUrl;
+    vid.load();
+    vid.oncanplay = () => {
+      loading.style.display='none';
+      if (playerPlaying) vid.play();
+    };
+    vid.onerror = () => {
+      // Fallback ke canvas
+      vid.style.display='none';
+      canvas.style.display='block';
+      loading.style.display='none';
+      startCanvasAnim(anime);
+    };
+    // Generate dubbing
+    loadDubbing(ep, curDub);
+  } else {
+    // Belum ada video → tampilkan canvas animasi + trigger generate
+    vid.style.display='none';
+    canvas.style.display='block';
+    loading.style.display='flex';
+    document.getElementById('pLoadTxt').textContent='GENERATING VIDEO AI...';
+
+    startCanvasAnim(anime);
+
+    // Trigger generate video kalau pending
+    if (ep.videoStatus === 'pending') {
+      generateVideoForEp(curAnimeIdx, curEp);
+    }
+
+    setTimeout(()=>{ loading.style.display='none'; },2000);
+  }
+
+  stopPlayerTimer();
+  startPlayerTimer();
+  updateEpBtns();
+}
+
+async function loadDubbing(ep, lang) {
+  if (lang === 'sub' || !ep) return;
+  // Stop audio dubbing sebelumnya
+  if (dubAudio) { dubAudio.pause(); dubAudio=null; }
+  // Check cache
+  if (ep.dubs[lang]) {
+    dubAudio = new Audio(ep.dubs[lang]);
+    if (playerPlaying) dubAudio.play();
+    return;
+  }
+  // Generate dubbing
+  const dubText = {
+    id: `${ep.title}. Episode ${ep.num} dari anime ${animeDB[curAnimeIdx].title}.`,
+    en: `${ep.title}. Episode ${ep.num} of the anime ${animeDB[curAnimeIdx].title}.`,
+    ja: `第${ep.num}話、${ep.title}。アニメ${animeDB[curAnimeIdx].title}より。`
+  }[lang];
+
+  if (dubText) {
+    const audio = await generateDubbing(dubText, lang);
+    if (audio) {
+      ep.dubs[lang] = audio.src;
+      dubAudio = audio;
+      if (playerPlaying) dubAudio.play();
+    }
+  }
+}
+
+function startCanvasAnim(anime) {
+  if (pAnimFrame) cancelAnimationFrame(pAnimFrame);
+  let t=0;
+  const draw = () => {
+    t+=0.008;
+    const w=pCanvas.width, h=pCanvas.height;
+    const g=pCtx.createLinearGradient(0,0,w,h);
+    g.addColorStop(0,anime.c1||'#001133');
+    g.addColorStop(1,anime.c2||'#002244');
+    pCtx.fillStyle=g; pCtx.fillRect(0,0,w,h);
+    // Stars
+    for(let i=0;i<60;i++){
+      const sx=(Math.sin(i*1.37+t)*.5+.5)*w;
+      const sy=(Math.cos(i*2.13+t*.7)*.5+.5)*h;
+      pCtx.fillStyle=`rgba(255,255,255,${.3+Math.sin(i+t*3)*.2})`;
+      pCtx.beginPath(); pCtx.arc(sx,sy,.8+Math.sin(i+t*3)*.4,0,Math.PI*2); pCtx.fill();
+    }
+    // Character
+    const acc=anime.acc||'#00f5ff';
+    const cx=w*.5, cy=h*.45;
+    const bob=Math.sin(t*2)*5;
+    pCtx.shadowColor=acc; pCtx.shadowBlur=20;
+    pCtx.fillStyle=acc; pCtx.globalAlpha=.8;
+    pCtx.beginPath(); pCtx.arc(cx,cy-h*.12+bob,40,0,Math.PI*2); pCtx.fill();
+    pCtx.fillStyle=anime.c2||'#002244'; pCtx.globalAlpha=1;
+    pCtx.beginPath(); pCtx.arc(cx,cy-h*.12+bob-15,42,Math.PI,Math.PI*2); pCtx.fill();
+    pCtx.fillStyle=acc; pCtx.globalAlpha=.7;
+    pCtx.beginPath();
+    pCtx.moveTo(cx-35,cy+bob+20); pCtx.lineTo(cx+35,cy+bob+20);
+    pCtx.lineTo(cx+25,cy+bob+100); pCtx.lineTo(cx-25,cy+bob+100);
+    pCtx.closePath(); pCtx.fill();
+    // Aura
+    const aura=pCtx.createRadialGradient(cx,cy+bob,0,cx,cy+bob,120);
+    aura.addColorStop(0,acc+'33'); aura.addColorStop(1,'transparent');
+    pCtx.fillStyle=aura; pCtx.globalAlpha=.5+Math.sin(t*3)*.1;
+    pCtx.fillRect(0,0,w,h);
+    pCtx.globalAlpha=1; pCtx.shadowBlur=0;
+    // Bottom bar
+    pCtx.fillStyle='rgba(0,0,0,.6)'; pCtx.fillRect(0,h-85,w,85);
+    pCtx.fillStyle='#fff'; pCtx.font='bold 14px Orbitron,monospace';
+    pCtx.textAlign='left'; pCtx.shadowColor=acc; pCtx.shadowBlur=8;
+    const anime_=animeDB[curAnimeIdx];
+    const ep_=anime_?.episodes[curEp];
+    pCtx.fillText(`${anime_?.title} — EP${curEp+1}: ${ep_?.title||''}`,20,h-55);
+    // Sub teks per dub
+    const subs={
+      id:['Aku tidak akan menyerah!','Kekuatan ini... milikku!','Ini baru permulaan!','Bersamamu, aku bisa!'],
+      en:["I won't give up!",'This power is mine!','This is just the beginning!','Together, we can!'],
+      ja:['あきらめない！','この力は私のもの！','まだ始まりだ！','一緒に行こう！'],
+      sub:['[I won\'t give up!]','[This power is mine!]','[This is just the beginning!]','[Together, we can!]']
+    };
+    const lines=subs[curDub]||subs.id;
+    const li=Math.floor(t/3)%lines.length;
+    pCtx.font='15px Noto Sans JP,sans-serif'; pCtx.textAlign='center';
+    pCtx.shadowColor='#000'; pCtx.shadowBlur=4;
+    pCtx.fillText(lines[li],w/2,h-105);
+    pCtx.shadowBlur=0;
+    // DUB indicator
+    pCtx.font='11px Rajdhani,sans-serif'; pCtx.fillStyle=acc; pCtx.textAlign='left';
+    const dl={id:'🇮🇩 DUB Indonesia',en:'🇬🇧 English Dub',ja:'🇯🇵 日本語',sub:'📝 Subtitle'};
+    pCtx.fillText(dl[curDub],20,h-30);
+    pAnimFrame=requestAnimationFrame(draw);
+  };
+  draw();
+}
+
+function startPlayerTimer() {
+  stopPlayerTimer(); playerPlaying=true;
+  document.getElementById('playPauseBtn').textContent='⏸';
+  const vid=document.getElementById('pVideo');
+  const ep=animeDB[curAnimeIdx].episodes[curEp];
+  if (ep.videoUrl && vid.src) {
+    vid.play().catch(()=>{});
+    vid.ontimeupdate=()=>{ updatePlayerTime(vid.currentTime, vid.duration||0); };
+    vid.onended=()=>nextEp();
+  } else {
+    playerInterval=setInterval(()=>{
+      if(!playerPlaying)return;
+      playerTime++;
+      updatePlayerTime(playerTime, 1440);
+      if(playerTime>=1440){nextEp();}
+    },1000);
+  }
+  if(dubAudio && dubAudio.paused) dubAudio.play().catch(()=>{});
+}
+
+function updatePlayerTime(cur, dur) {
+  const pct=dur>0?(cur/dur*100):0;
+  document.getElementById('pProgFill').style.width=pct+'%';
+  const f=t=>`${Math.floor(t/60)}:${String(Math.floor(t%60)).padStart(2,'0')}`;
+  document.getElementById('pTime').textContent=`${f(cur)} / ${f(dur)}`;
+}
+
+function stopPlayerTimer() {
+  clearInterval(playerInterval);
+  playerTime=0;
+  const vid=document.getElementById('pVideo');
+  vid.pause(); vid.ontimeupdate=null; vid.onended=null;
+  if(dubAudio){dubAudio.pause();}
+}
+
+function togglePlay() {
+  playerPlaying=!playerPlaying;
+  document.getElementById('playPauseBtn').textContent=playerPlaying?'⏸':'▶';
+  const vid=document.getElementById('pVideo');
+  if(animeDB[curAnimeIdx]?.episodes[curEp]?.videoUrl && vid.src){
+    playerPlaying?vid.play().catch(()=>{}):vid.pause();
+  }
+  if(dubAudio){playerPlaying?dubAudio.play().catch(()=>{}):dubAudio.pause();}
+}
+
+function nextEp() {
+  const anime=animeDB[curAnimeIdx];
+  if(curEp<anime.episodes.length-1){
+    curEp++;
+    stopPlayerTimer();
+    loadEpisode();
+  } else {
+    toast('Semua episode sudah ditonton! 🎉','success');
+    playerPlaying=false;
+    document.getElementById('playPauseBtn').textContent='▶';
+  }
+}
+
+function prevEp() {
+  if(curEp>0){ curEp--; stopPlayerTimer(); loadEpisode(); }
+}
+
+function updateEpBtns() {
+  const anime=animeDB[curAnimeIdx];
+  const max=Math.min(anime.episodes.length,12);
+  document.getElementById('epBtns').innerHTML=Array.from({length:max},(_,i)=>
+    `<button class="ep-btn${i===curEp?' active':''}" onclick="goToEp(${i})">EP${i+1}</button>`
+  ).join('')+(anime.episodes.length>12?`<span style="color:var(--dim);font-size:.7rem;padding:.4rem">+${anime.episodes.length-12} lagi</span>`:'');
+}
+
+function goToEp(n){curEp=n;stopPlayerTimer();loadEpisode();}
+
+function changeDub(val){
+  curDub=val;
+  const ep=animeDB[curAnimeIdx]?.episodes[curEp];
+  if(ep) loadDubbing(ep,val);
+  document.getElementById('pDubLabel').textContent={id:'🇮🇩 DUB Indonesia',en:'🇬🇧 DUB English',ja:'🇯🇵 DUB Japan',sub:'📝 Subtitle'}[val];
+  toast(`Dubbing: ${{id:'Indonesia',en:'English',ja:'Japanese',sub:'Subtitle'}[val]} 🎤`,'info');
+}
+
+function seekVideo(e){
+  const bar=e.currentTarget;
+  const pct=e.offsetX/bar.offsetWidth;
+  const vid=document.getElementById('pVideo');
+  if(vid.src&&vid.duration){vid.currentTime=pct*vid.duration;}
+  else{playerTime=Math.floor(pct*1440); updatePlayerTime(playerTime,1440);}
+}
+
+function toggleFS(){
+  const el=document.querySelector('.player');
+  if(!document.fullscreenElement)el.requestFullscreen?.();
+  else document.exitFullscreen?.();
+}
+
+// ===== GENERATE ANIME (manual) =====
+async function generateAnime() {
+  if(generating)return;
+  if(!currentUser&&!isGuest){showLoginScreen();return;}
+  const title=document.getElementById('genTitle').value.trim();
+  const genre=document.getElementById('genGenre').value;
+  const eps=parseInt(document.getElementById('genEps').value);
+  const dub=document.getElementById('genDub').value;
+  const desc=document.getElementById('genDesc').value.trim();
+  const style=document.getElementById('genStyle').value;
+  const target=document.getElementById('genTarget').value;
+  if(!title){toast('Masukkan judul anime!','error');return;}
+  if(!desc){toast('Masukkan deskripsi cerita!','error');return;}
+
+  generating=true;
+  document.getElementById('genBtn').disabled=true;
+  document.getElementById('genSpinner').style.display='block';
+  document.getElementById('genBtnTxt').textContent='MEMBUAT...';
+  document.getElementById('genProg').classList.add('active');
+
+  const steps=[
+    {txt:'🧠 Menganalisis konsep & menulis cerita...',dur:1500},
+    {txt:'🎨 Merancang karakter & visual anime...',dur:1200},
+    {txt:'🎬 Mengirim prompt ke Kling AI...',dur:1000},
+    {txt:'⚙️ Kling AI memproses video (background)...',dur:800},
+    {txt:'🎤 Menyiapkan sistem dubbing...',dur:1000},
+    {txt:'📦 Menyimpan ke database...',dur:600},
+    {txt:'✅ Selesai!',dur:400}
+  ];
+
+  const stDiv=document.getElementById('genSteps');
+  stDiv.innerHTML=steps.map((_,i)=>`<div class="p-step" id="gs${i}"><div class="step-ico" id="gi${i}">○</div><span>${_.txt}</span></div>`).join('');
+
+  let total=steps.reduce((s,x)=>s+x.dur,0), elapsed=0;
+
+  // Paralel: ambil cerita dari Claude
+  let storyData={synopsis:desc,episodes:[]};
+  const storyPromise = fetch('/api/generate-story',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({title,genre,desc,style,target})
+  }).then(r=>r.json()).then(d=>{if(d.synopsis)storyData=d;}).catch(()=>{});
+
+  for(let i=0;i<steps.length;i++){
+    document.getElementById('gs'+i).classList.add('active');
+    document.getElementById('gi'+i).classList.add('spin');
+    document.getElementById('gi'+i).textContent='';
+    document.getElementById('genStatus').textContent=steps[i].txt;
+    await sleep(steps[i].dur);
+    elapsed+=steps[i].dur;
+    document.getElementById('pbar').style.width=(elapsed/total*100)+'%';
+    document.getElementById('gs'+i).classList.replace('active','done');
+    document.getElementById('gi'+i).classList.remove('spin');
+    document.getElementById('gi'+i).textContent='✓';
+  }
+
+  await storyPromise;
+
+  const sc={'modern anime':{c1:'#001122',c2:'#002244',acc:'#00f5ff'},'dark fantasy anime':{c1:'#0a0010',c2:'#150020',acc:'#aa00ff'},'colorful bright anime':{c1:'#001a10',c2:'#003320',acc:'#00ffaa'},'retro 90s anime':{c1:'#1a0a00',c2:'#2a1500',acc:'#ff8800'}}[style]||{c1:'#001122',c2:'#002244',acc:'#00f5ff'};
+
+  const newAnime={
+    id:animeDB.length, title, genre, eps, desc:storyData.synopsis||desc,
+    style, rating:(Math.random()*1.5+8).toFixed(1),
+    c1:sc.c1, c2:sc.c2, acc:sc.acc,
+    episodes: Array.from({length:eps},(_,ep)=>({
+      num:ep+1,
+      title:(storyData.episodes&&storyData.episodes[ep])||genEpTitle(genre,ep+1),
+      videoUrl:null,videoTaskId:null,videoStatus:'pending',
+      dubs:{id:null,en:null,ja:null,sub:null}
+    })),
+    likes:0, views:1, isGenerated:true,
+    creatorUid:currentUser?.uid||'guest',
+    createdAt:Date.now()
+  };
+
+  animeDB.push(newAnime);
+  myGenerated.push(newAnime.id);
+  if(currentUser){
+    saveUserData();
+    try{await db.collection('animeAI').add({...newAnime,creatorName:currentUser.displayName});}catch(e){}
+  }
+
+  generating=false;
+  document.getElementById('genBtn').disabled=false;
+  document.getElementById('genSpinner').style.display='none';
+  document.getElementById('genBtnTxt').textContent='⚡ GENERATE ANIME + VIDEO + DUBBING';
+  document.getElementById('genProg').classList.remove('active');
+  document.getElementById('pbar').style.width='0%';
+
+  renderAll(); animateStats();
+  toast(`✨ "${title}" berhasil dibuat!`,'success');
+
+  // Generate video EP1 di background
+  generateVideoForEp(newAnime.id, 0);
+  toast('🎬 Video Kling AI EP1 sedang diproses di background...','info');
+
+  setTimeout(()=>{openPlayer(newAnime.id);},800);
+  document.getElementById('genTitle').value='';
+  document.getElementById('genDesc').value='';
+}
+
+// ===== UTILS =====
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+function filterGenre(g,btn){
+  curGenre=g;
+  document.querySelectorAll('.cat').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); renderAll();
+}
+
+function searchAnime(q){
+  const l=q.toLowerCase();
+  const f=l?animeDB.filter(a=>a.title.toLowerCase().includes(l)||a.genre.includes(l)):animeDB;
+  document.getElementById('mainGrid').innerHTML=f.map(a=>cardHTML(a,false)).join('');
+  document.getElementById('browseGrid').innerHTML=f.map(a=>cardHTML(a,false)).join('');
+  setTimeout(()=>f.forEach(a=>drawThumb(document.getElementById('thumb_'+a.id),a)),50);
+}
+
+function toggleFav(id){
+  if(!currentUser&&!isGuest){showLoginScreen();return;}
+  const i=myList.indexOf(id);
+  if(i===-1){myList.push(id);toast('Ditambahkan ke favorit ❤️','success');}
+  else{myList.splice(i,1);toast('Dihapus dari favorit','info');}
+  if(currentUser)saveUserData();
+  renderAll();
+}
+
+function renderMyList(){
+  const items=animeDB.filter(a=>myList.includes(a.id));
+  const grid=document.getElementById('mylistGrid');
+  const empty=document.getElementById('mylistEmpty');
+  if(items.length===0){grid.innerHTML='';empty.style.display='block';}
+  else{empty.style.display='none';grid.innerHTML=items.map(a=>cardHTML(a,false)).join('');setTimeout(()=>items.forEach(a=>drawThumb(document.getElementById('thumb_'+a.id),a)),50);}
+}
+
+function renderGenerated(){
+  const items=animeDB.filter(a=>a.isGenerated);
+  const grid=document.getElementById('generatedGrid');
+  const empty=document.getElementById('generatedEmpty');
+  if(items.length===0){grid.innerHTML='';empty.style.display='block';}
+  else{empty.style.display='none';grid.innerHTML=items.map(a=>cardHTML(a,false)).join('');setTimeout(()=>items.forEach(a=>drawThumb(document.getElementById('thumb_'+a.id),a)),50);}
+}
+
+function showPage(p){
+  document.getElementById('homePage').style.display=p==='home'?'block':'none';
+  ['browse','mylist','generated'].forEach(x=>{
+    const el=document.getElementById(x+'Page');
+    if(el)el.classList.toggle('active',x===p);
+  });
+  if(p==='mylist')renderMyList();
+  if(p==='generated')renderGenerated();
+  document.getElementById('profileWrap').classList.remove('open');
+  window.scrollTo(0,0);
+}
+
+function goHome(){
+  showPage('home');
+  document.getElementById('homePage').style.display='block';
+}
+
+function scrollToGen(){document.getElementById('genSection').scrollIntoView({behavior:'smooth'});}
+
+function animateStats(){
+  [[' sAnime',animeDB.length],[' sEp',animeDB.reduce((s,a)=>s+a.eps,0)],[' sUsers',Math.floor(animeDB.reduce((s,a)=>s+a.views,0)/1000)]].forEach(([id,end])=>{
+    let cur=0; const step=Math.ceil(end/60);
+    const iv=setInterval(()=>{
+      cur=Math.min(cur+step,end);
+      const el=document.getElementById(id.trim());
+      if(el)el.textContent=end>1000?Math.floor(cur/100)/10+'K':cur;
+      if(cur>=end)clearInterval(iv);
+    },25);
+  });
+}
+
+function toast(msg,type='info'){
+  const tc=document.getElementById('toastWrap');
+  const icons={success:'✅',error:'❌',info:'ℹ️'};
+  const d=document.createElement('div');
+  d.className=`toast ${type}`;
+  d.innerHTML=`<span>${icons[type]}</span><span>${msg}</span>`;
+  tc.appendChild(d);
+  setTimeout(()=>{d.style.opacity='0';d.style.transform='translateX(20px)';setTimeout(()=>d.remove(),300);},3500);
+}
+
+function initParticles(){
+  const c=document.getElementById('particles');
+  const ctx=c.getContext('2d');
+  c.width=window.innerWidth; c.height=window.innerHeight;
+  const ps=Array.from({length:50},()=>({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*1.5+.3,dx:(Math.random()-.5)*.3,dy:(Math.random()-.5)*.3,op:Math.random()*.4+.1,col:Math.random()>.5?'0,245,255':'255,45,120'}));
+  function draw(){
+    ctx.clearRect(0,0,c.width,c.height);
+    ps.forEach(p=>{p.x+=p.dx;p.y+=p.dy;if(p.x<0||p.x>c.width)p.dx*=-1;if(p.y<0||p.y>c.height)p.dy*=-1;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle=`rgba(${p.col},${p.op})`;ctx.fill();});
+    requestAnimationFrame(draw);
+  }
+  draw();
+  window.addEventListener('resize',()=>{c.width=window.innerWidth;c.height=window.innerHeight;});
+}
+</script>
+</body>
+</html>
